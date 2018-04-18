@@ -1,0 +1,37 @@
+{
+  "name": "js-rcon-backend",
+  "version": "1.0.0",
+  "description": "Backend for a modern js-rcon, web-based server controller.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/js-rcon/js-rcon-backend.git"
+  },
+  "keywords": [
+    "javascript",
+    "nodejs",
+    "express",
+    "rcon",
+    "srcds"
+  ],
+  "author": "caf203",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/js-rcon/js-rcon-backend/issues"
+  },
+  "homepage": "https://github.com/js-rcon/js-rcon-backend#readme",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "express": "^4.16.3",
+    "passport": "^0.4.0",
+    "passport-local": "^1.0.0",
+    "path": "^0.12.7",
+    "ws": "^5.1.1"
+  },
+  "devDependencies": {
+    "standard": "^11.0.1"
+  }
+}
