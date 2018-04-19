@@ -5,7 +5,7 @@ let usersFile = fs.readFileSync(path.join(__dirname, '/../users.json'))
 try {
   records = JSON.parse(usersFile).records
 } catch (e) {
-  console.error('Malformed or missing users.json file!')
+  log.error('Malformed or missing users.json file!') // eslint-disable-line
   process.exit()
 }
 
