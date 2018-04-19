@@ -18,7 +18,7 @@
     "srcds"
   ],
   "author": "caf203",
-  "license": "ISC",
+  "license": "AGPLv3",
   "bugs": {
     "url": "https://github.com/js-rcon/js-rcon-backend/issues"
   },
@@ -27,7 +27,6 @@
     "body-parser": "^1.18.2",
     "cookie-parser": "^1.4.3",
     "dotenv": "^5.0.1",
-    "eslint": "^4.19.1",
     "express": "^4.16.3",
     "express-session": "^1.15.6",
     "fs": "0.0.1-security",
@@ -40,10 +39,10 @@
     "path": "^0.12.7",
     "socket.io": "^2.1.0",
     "srcds-rcon": "^2.2.1",
-    "winston": "^2.4.1",
-    "ws": "^5.1.1"
+    "winston": "^2.4.1"
   },
   "devDependencies": {
+    "eslint": "^4.19.1",
     "standard": "^11.0.1"
   }
 }
