@@ -40,6 +40,7 @@
     "path": "^0.12.7",
     "socket.io": "^2.1.0",
     "srcds-rcon": "^2.2.1",
+    "winston": "^2.4.1",
     "ws": "^5.1.1"
   },
   "devDependencies": {
