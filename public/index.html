@@ -52,6 +52,11 @@
      <input type="text" placeholder="Time" id="banplayertime"> Time</input>
      <input type="submit">
  </form>
+ <form id="listplayers" onSubmit="return false;">
+     <p>Fetch player list</p>
+     <input type="submit">
+ </form>
+ <p id="players">Loading</p>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.0/socket.io.js"></script>
   <script
           src="https://code.jquery.com/jquery-3.3.1.min.js"
@@ -67,7 +72,19 @@
     alert('Disconnected.')
   })
   socket.on('message', (message) => {
-    alert(`Message: ${message}`)
+    message = JSON.parse(message)
+      if (message.op !== 'LISTPLAYERS_RESPONSE') {
+          alert(`Message: ${message}`)
+      } else {
+        let str = ''
+        console.log(message.c)
+          message.c.forEach((user) => {
+              str += `Nickname: ${user.Nick}, IP: ${user.IP}, SteamID: ${user.SteamID} | `
+          })
+          console.log(str)
+          if (!str) $('#players').text('None')
+          else $('#players').text(str)
+      }
   })
   socket.on('news', function (data) {
     console.log(data);
@@ -75,6 +92,10 @@
   });
 
   $(document).ready(() => {
+      socket.send(JSON.stringify({
+          op: 'LISTPLAYERS',
+          id: 21
+      }))
       $('#eval').submit((e) => {
           e.preventDefault()
           console.log('Submitted')
@@ -210,6 +231,15 @@
           $('#banplayername').val('')
           $('#banplayerreason').val('')
           $('#banplayertime').val('')
+      })
+      $('#listplayers').submit((e) => {
+          e.preventDefault()
+          console.log('Submitted')
+          socket.send(JSON.stringify({
+              op: 'LISTPLAYERS',
+              id: 21
+          }))
+          $('#players').text('Loading')
       })
   })
 </script>
