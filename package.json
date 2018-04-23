@@ -1,10 +1,10 @@
 {
   "name": "js-rcon-backend",
   "version": "1.0.0",
-  "description": "Backend for a modern js-rcon, web-based server controller.",
+  "description": "Backend for JS-RCON, the modern web-based Team Fortress 2 server controller.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "eslint ."
   },
   "repository": {
     "type": "git",
@@ -44,6 +44,10 @@
   },
   "devDependencies": {
     "eslint": "^4.19.1",
-    "standard": "^11.0.1"
+    "eslint-config-standard": "^11.0.0",
+    "eslint-plugin-standard": "^3.0.1",
+    "eslint-plugin-import": "^2.11.0",
+    "eslint-plugin-node": "^6.0.1",
+    "eslint-plugin-promise": "^3.7.0"
   }
 }
