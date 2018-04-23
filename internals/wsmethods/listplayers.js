@@ -7,10 +7,10 @@ module.exports = (RCONConnection, websocket, msg) => {
       lines.splice(0, 1) // remove top two lines of dashes
       lines.splice(1, 1) // remove dashes beneath column names
       lines.splice(lines.length - 2, lines.length) // remove bottom 3 lines of dashes
+
       let newtext = lines.join('\n') // rejoin into multiline string
-      console.log(newtext)
-      let users = parseColumns(newtext) // parse player list into object
-      console.log(users)
+      const users = parseColumns(newtext) // parse player list into object
+
       websocket.send(JSON.stringify({
         op: 'LISTPLAYERS_RESPONSE',
         c: users,

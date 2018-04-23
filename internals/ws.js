@@ -16,8 +16,8 @@ exports.init = (app, sessionStore) => {
   })
 
   RCONConnection.connect().then(() => {
-    log.info('Connection established to RCON.') // eslint-disable-line
-    log.info('Websocket is now ready to receive events.') // eslint-disable-line
+    global.log.info(`Successfully connected to RCON server at ${process.env.RCON_ADDRESS}.`)
+    global.log.debug('Websocket connection established; ready to receive events.')
   })
 
   WSS.use(passportSocketIo.authorize({
@@ -28,20 +28,23 @@ exports.init = (app, sessionStore) => {
   }))
 
   WSS.on('connection', (socket) => {
-    if (!socket.request.user) socket.close() // eslint-disable-line
-    log.info(`Websocket opened with user ${socket.request.user.username}`) // eslint-disable-line
+    if (!socket.request.user) socket.close()
+    global.log.debug(`Websocket connection opened with user "${socket.request.user.username}".`)
+
     socket.on('message', (msg) => {
       try {
         msg = JSON.parse(msg)
       } catch (e) {
-        log.error('Malformed message!', msg) // eslint-disable-line
+        global.log.error('Malformed message!', msg)
         socket.close()
         return
       }
+
       if (!msg.op || !msg.id) {
-        log.error('Malformed message received!', msg) // eslint-disable-line
+        global.log.error('Malformed message received!', msg)
         socket.close()
       }
+
       WSMethods[msg.op](RCONConnection, socket, msg)
     })
   })
