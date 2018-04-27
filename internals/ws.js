@@ -18,6 +18,8 @@ exports.init = (app, sessionStore) => {
   RCONConnection.connect().then(() => {
     global.log.info(`Successfully connected to RCON server at ${process.env.RCON_ADDRESS}.`)
     global.log.debug('Websocket connection established; ready to receive events.')
+  }).catch(err => {
+    global.log.error(`Could not connect to RCON server: ${err}`)
   })
 
   WSS.use(passportSocketIo.authorize({

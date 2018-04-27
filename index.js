@@ -2,6 +2,7 @@ const express = require('express')
 const app = express()
 const http = require('http').Server(app)
 const bodyParser = require('body-parser')
+const cors = require('cors')
 const path = require('path')
 const session = require('express-session')
 const NedbStore = require('nedb-session-store')(session)
@@ -37,37 +38,53 @@ passport.deserializeUser((id, callback) => {
 })
 
 // Initialize middleware
+app.use(cors())
 app.use(require('cookie-parser')())
 app.use(require('body-parser').urlencoded({ extended: true }))
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  store: sessionStore
+  store: sessionStore,
+  rolling: true
 }))
 app.use(bodyParser.json())
 app.use(passport.initialize())
 app.use(passport.session())
 
-app.get('/', (req, res) => {
+// This is redundant for now, but it will eventually be used to serve the frontend
+// For now it's just future proofing
+app.use(express.static(path.join(__dirname, '/public')))
+
+app.get('/status', (req, res) => {
   if (req.user) { // A user is already logged in
-    res.sendFile(path.join(__dirname, '/public/index.html'))
-  } else { // No active login, redirect
-    res.sendFile(path.join(__dirname, '/public/login.html'))
+    res.status(200).send({
+      username: req.user.username
+    })
+  } else { // No active login
+    res.status(200).send({
+      username: null
+    })
   }
 })
 
-app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, '/public/login.html'))
-})
-
-app.post('/login',
-  // TODO: Add a proper return code for authentication failure
-  passport.authenticate('local', { failureRedirect: '/failed' }), // Yes, /failed isn't a route.
+app.post('/auth',
+  passport.authenticate('local'),
   (req, res) => {
     log.info(`User "${req.user.username}" logged in.`)
-    res.redirect('/')
+    res.status(200).send({
+      username: req.user.username
+    })
   })
+
+app.post('/logout', (req, res) => {
+  if (!req.user) res.redirect('/') // Plain redirect for no session
+  else {
+    log.info(`User "${req.user.username}" logged out.`)
+    req.logout()
+    res.redirect('/')
+  }
+})
 
 http.listen(process.env.LISTEN_PORT, () => {
   log.info(`RCON web interface started on port ${process.env.LISTEN_PORT}.`)
