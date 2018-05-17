@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 
-module.exports = function (readFrom) {
+module.exports = (readFrom) => {
   let allFiles = fs.readdirSync(readFrom)
   let allMethods = {}
 

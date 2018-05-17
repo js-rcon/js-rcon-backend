@@ -1,14 +1,12 @@
 const path = require('path')
-const cookieParser = require('cookie-parser')
-const passportSocketIo = require('passport.socketio')
-const passport = require('passport')
+const { getSession } = require('./session')
 const WSMethods = require(path.join(__dirname, '/wsmethods/index'))(path.join(__dirname, '/wsmethods/'))
 
 let WSS
 let RCONConnection = require('srcds-rcon')
 
-exports.init = (app, sessionStore) => {
-  WSS = require('socket.io')(app)
+function init (httpServer) {
+  WSS = require('socket.io')(httpServer)
 
   RCONConnection = RCONConnection({
     address: process.env.RCON_ADDRESS,
@@ -22,32 +20,50 @@ exports.init = (app, sessionStore) => {
     global.log.error(`Could not connect to RCON server: ${err}`)
   })
 
-  WSS.use(passportSocketIo.authorize({
-    secret: process.env.SESSION_SECRET,
-    store: sessionStore,
-    passport: passport,
-    cookieParser: cookieParser
-  }))
+  // Authentication
+  require('socketio-auth')(WSS, {
+    authenticate: auth,
+    postAuthenticate: postAuth,
+    disconnect: disconnect,
+    timeout: 3000 // Keep socket dangling for a max of 3 seconds before dropping the connection
+  })
 
-  WSS.on('connection', (socket) => {
-    if (!socket.request.user) socket.close()
-    global.log.debug(`Websocket connection opened with user "${socket.request.user.username}".`)
-
-    socket.on('message', (msg) => {
+  WSS.on('connection', socket => {
+    socket.on('message', msg => {
       try {
         msg = JSON.parse(msg)
       } catch (e) {
-        global.log.error('Malformed message!', msg)
+        global.log.error(`Could not parse socket message to JSON: ${msg}`)
         socket.close()
-        return
       }
 
       if (!msg.op || !msg.id) {
-        global.log.error('Malformed message received!', msg)
+        global.log.error(`Received malformed socket message: ${msg}`)
         socket.close()
       }
 
       WSMethods[msg.op](RCONConnection, socket, msg)
     })
   })
+}
+
+function auth (socket, data, callback) {
+  const token = data.token
+
+  getSession(token).then(validSession => {
+    if (!validSession) return callback(new Error('Invalid username or session token'))
+    else return callback(null, true)
+  })
+}
+
+function postAuth (socket) {
+  global.log.info(`Socket ID "${socket.id}" (IP ${socket.handshake.address}) logged in.`)
+}
+
+function disconnect (socket) {
+  global.log.info(`Socket ID "${socket.id}" (IP ${socket.handshake.address}) disconnected.`)
+}
+
+module.exports = {
+  init: init
 }
