@@ -1,6 +1,7 @@
 const path = require('path')
 const { getSession } = require('./session')
 const WSMethods = require(path.join(__dirname, '/wsmethods/index'))(path.join(__dirname, '/wsmethods/'))
+const heartbeat = require('./heartbeat')
 
 let WSS
 let RCONConnection = require('srcds-rcon')
@@ -26,9 +27,16 @@ function init (httpServer) {
     disconnect: disconnect,
     timeout: 1500 // Keep socket dangling for a max of 1,5 seconds before dropping the connection
   })
+  
+  setInterval(() => {
+    let aliveSockets = Object.keys(WSS.sockets.connected).map(socketId => WSS.sockets.connected[socketId])
+    heartbeat(RCONConnection, aliveSockets)
+  }, 2000)
 
-  WSS.on('connection', socket => {
-    socket.on('message', msg => {
+  WSS.on('connection', (socket) => {
+    global.log.debug(`Websocket connection opened.`)
+
+    socket.on('message', (msg) => {
       try {
         msg = JSON.parse(msg)
       } catch (e) {

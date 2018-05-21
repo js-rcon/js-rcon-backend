@@ -1,5 +1,5 @@
 module.exports = (RCONConnection, websocket, msg) => {
-  if (!msg.user || !msg.time) websocket.close()
+  if (!msg.time) websocket.close()
   RCONConnection.command(`sm_burn ${msg.user} ${msg.time}`).then((response) => {
     if (response.includes(`Set ${msg.user} on fire`)) {
       websocket.send(JSON.stringify({

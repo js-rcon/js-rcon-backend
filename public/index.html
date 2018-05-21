@@ -56,14 +56,21 @@
      <p>Fetch player list</p>
      <input type="submit">
  </form>
- <p id="players">Loading</p>
+ <h3>Enable autokick of users with private profiles, or are too young:</h3>
+ <input id="protection" type="checkbox">
+ <hr />
+ <div id="players"></div>
+ <div id="autokickedlist">
+     <h3>Auto kicked user list:</h3>
+ </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.0/socket.io.js"></script>
   <script
           src="https://code.jquery.com/jquery-3.3.1.min.js"
           integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
           crossorigin="anonymous"></script>
 <script>
-
+    let protectionEnabled = false;
+    let kickedUsers = []
   var socket = io();
   socket.on('connect', () => {
     alert('Opened connection.')
@@ -71,31 +78,41 @@
   socket.on('disconnect', () => {
     alert('Disconnected.')
   })
+
   socket.on('message', (message) => {
     message = JSON.parse(message)
-      if (message.op !== 'LISTPLAYERS_RESPONSE') {
-          alert(`Message: ${message}`)
+      if (message.op !== 'HEARTBEAT_RESPONSE' && message.op !== 'LISTPLAYERS_RESPONSE') {
+          alert(`Message: ${JSON.stringify(message)}`)
       } else {
         let str = ''
-        console.log(message.c)
           message.c.forEach((user) => {
-              str += `Nickname: ${user.Nick}, IP: ${user.IP}, SteamID: ${user.SteamID} | `
+              if (protectionEnabled && (user.young || user.private)) {
+                  socket.send(JSON.stringify({
+                      op: 'KICK',
+                      user: user.Nick,
+                      reason: 'Your account violates one of the provided rules!',
+                      id: 21
+                  }))
+                  kickedUsers.push(`<p>${user.Nick}: ${user.SteamID} | ${user.steamid64}</p>`)
+                  $('#autokickedlist').html($('autokickedlist').html() + `<h3>Autokicked user list:</h3>${kickedUsers.join('')}`)
+              } else {
+                  str += `<img src=${user.avatarmedium}> <p>Nickname: ${user.Nick}</p> <p>IP: ${user.IP}</p> <p>SteamID: ${user.SteamID}</p> <p>SteamID64: ${user.steamid64}</p> <p>Younger than 1 week: ${user.young ? 'Yes' : 'No'}</p> <p>Private profile: ${user.private ? 'Yes' : 'No'}</p><a href="${user.profileurl}">Profile</a><hr />`
+              }
           })
-          console.log(str)
           if (!str) $('#players').text('None')
-          else $('#players').text(str)
+          else $('#players').html(str)
       }
   })
-  socket.on('news', function (data) {
-    console.log(data);
-    socket.emit('my other event', { my: 'data' });
-  });
 
   $(document).ready(() => {
       socket.send(JSON.stringify({
           op: 'LISTPLAYERS',
           id: 21
       }))
+      $('#protection').change(() => {
+          protectionEnabled = !protectionEnabled
+      })
+
       $('#eval').submit((e) => {
           e.preventDefault()
           console.log('Submitted')
@@ -239,7 +256,6 @@
               op: 'LISTPLAYERS',
               id: 21
           }))
-          $('#players').text('Loading')
       })
   })
 </script>

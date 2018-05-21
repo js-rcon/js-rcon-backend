@@ -40,6 +40,8 @@
     "socket.io-client": "^2.1.0",
     "socketio-auth": "^0.1.0",
     "srcds-rcon": "^2.2.1",
+    "steam-web": "^0.7.0",
+    "steamid": "^1.1.0",
     "winston": "^2.4.1"
   },
   "devDependencies": {
