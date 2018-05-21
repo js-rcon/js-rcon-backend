@@ -38,6 +38,7 @@ passport.deserializeUser((id, callback) => {
 })
 
 // Initialize middleware
+
 app.use(cors())
 app.use(require('cookie-parser')())
 app.use(require('body-parser').urlencoded({ extended: true }))
@@ -71,7 +72,7 @@ app.get('/status', (req, res) => {
 app.post('/auth',
   passport.authenticate('local'),
   (req, res) => {
-    log.info(`User "${req.user.username}" logged in.`)
+    global.log.info(`User "${req.user.username}" logged in.`)
     res.status(200).send({
       username: req.user.username
     })

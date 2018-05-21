@@ -3,6 +3,7 @@ const cookieParser = require('cookie-parser')
 const passportSocketIo = require('passport.socketio')
 const passport = require('passport')
 const WSMethods = require(path.join(__dirname, '/wsmethods/index'))(path.join(__dirname, '/wsmethods/'))
+const heartbeat = require('./heartbeat')
 
 let WSS
 let RCONConnection = require('srcds-rcon')
@@ -22,16 +23,13 @@ exports.init = (app, sessionStore) => {
     global.log.error(`Could not connect to RCON server: ${err}`)
   })
 
-  WSS.use(passportSocketIo.authorize({
-    secret: process.env.SESSION_SECRET,
-    store: sessionStore,
-    passport: passport,
-    cookieParser: cookieParser
-  }))
+  setInterval(() => {
+    let aliveSockets = Object.keys(WSS.sockets.connected).map(socketId => WSS.sockets.connected[socketId])
+    heartbeat(RCONConnection, aliveSockets)
+  }, 2000)
 
   WSS.on('connection', (socket) => {
-    if (!socket.request.user) socket.close()
-    global.log.debug(`Websocket connection opened with user "${socket.request.user.username}".`)
+    global.log.debug(`Websocket connection opened.`)
 
     socket.on('message', (msg) => {
       try {
