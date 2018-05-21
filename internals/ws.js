@@ -15,7 +15,6 @@ function init (httpServer) {
 
   RCONConnection.connect().then(() => {
     global.log.info(`Successfully connected to RCON server at ${process.env.RCON_ADDRESS}.`)
-    global.log.debug('Websocket connection established; ready to receive events.')
   }).catch(err => {
     global.log.error(`Could not connect to RCON server: ${err}`)
   })
@@ -25,7 +24,7 @@ function init (httpServer) {
     authenticate: auth,
     postAuthenticate: postAuth,
     disconnect: disconnect,
-    timeout: 3000 // Keep socket dangling for a max of 3 seconds before dropping the connection
+    timeout: 1500 // Keep socket dangling for a max of 1,5 seconds before dropping the connection
   })
 
   WSS.on('connection', socket => {

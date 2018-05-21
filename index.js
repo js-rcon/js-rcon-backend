@@ -1,6 +1,15 @@
-// This needs to be accessible by the whole application and is thus declared first
+// PRESTART
+
+// CLI options passed to the script, minus 'node' and file path
+global.cliOptions = process.argv.slice(2)
+
+// Determine environment
+global.devMode = global.cliOptions.includes('-d') || global.cliOptions.includes('--debug') || false
+
 const log = require('./internals/logger')
 global.log = log
+
+// MAIN APP
 
 const express = require('express')
 const app = express()
@@ -19,12 +28,6 @@ process.title = 'JS-RCON'
 // Ping Redis server
 pingServer()
 
-// CLI options passed to the script, minus Node and file path
-global.cliOptions = process.argv.slice(2)
-
-// Determine environment
-global.devMode = global.cliOptions.includes('-d') || global.cliOptions.includes('--debug') || false
-
 // Initialize middleware
 if (global.devMode) {
   log.warn('Running in debug mode - enabling CORS.')
@@ -39,17 +42,30 @@ app.use(helmet({ noCache: true }))
 app.use(express.static(path.join(__dirname, '/public')))
 
 app.get('/status', async (req, res) => {
-  const session = await getSession(req.headers['token'])
+  let session
+  try {
+    session = await getSession(req.headers['token'])
+  } catch (err) {
+    if (err.message === 'Invalid token format') {
+      log.debug(`[status] Attempted to get session for token "${req.headers['token']}", but the format was invalid.`)
+    } else {
+      log.error(`[status] An error occurred while getting session for token "${req.headers['token']}":`, err)
+      res.status(500).send({ username: null, token: null, error: err })
+      return
+    }
+  }
 
-  if (Object.keys(session).length === 0) { // Session is not active
+  if (!session || Object.keys(session).length === 0) { // Session is not active
     res.status(200).send({
       username: null,
-      token: null
+      token: null,
+      error: null
     })
   } else {
     res.status(200).send({
       username: session.id,
-      token: req.headers['token'] // Returning the same token as it is valid
+      token: req.headers['token'], // Returning the same token as it is valid
+      error: null
     })
   }
 })
@@ -69,7 +85,7 @@ app.post('/auth', async (req, res) => {
   const authed = checkCredentials(req.body.username, req.body.password)
 
   if (!authed) {
-    log.warn(`Received invalid login for user "${req.body.username}" (IP ${req.ip}).`)
+    log.warn(`[auth] Received invalid login for user "${req.body.username}" (IP ${req.ip}).`)
 
     res.status(401).send({
       username: null,
@@ -77,25 +93,53 @@ app.post('/auth', async (req, res) => {
       error: 'Invalid username or password'
     })
   } else {
-    const token = await initSession(req.body.username, req.ip)
+    let token
+    try {
+      token = await initSession(req.body.username, req.ip)
+    } catch (err) {
+      log.error(`[auth] An error occurred while initialising session for user "${req.body.username}" (IP ${req.ip}):`, err)
+      res.status(500).send({
+        username: null,
+        token: null,
+        error: err
+      })
+      return
+    }
 
     log.info(`User "${req.body.username}" (IP ${req.ip}) logged in.`)
 
     res.status(200).send({
       username: req.body.username,
-      token: token, // TODO: Encrypt this before sending
+      token: token,
       error: null
     })
   }
 })
 
 app.post('/logout', async (req, res) => {
-  if (req.body.token) await terminateSession(req.body.token)
+  if (req.body.token) {
+    try {
+      await terminateSession(req.body.token)
+    } catch (err) {
+      if (err.message === 'Invalid token format') {
+        log.warn(`[logout] Attempted to terminate session for token "${req.body.token}", but the format was invalid.`)
+      } else {
+        log.error(`[logout] An error occured while terminating session "${req.body.token}":`, err)
+        res.status(500).send({ loggedOut: false, error: err })
+        return
+      }
+    }
+  }
+
   log.info(`User "${req.body.username || '<unknown user>'}" (IP: ${req.ip}) logged out.`)
-  res.status(200).send({ loggedOut: true })
+  res.status(200).send({ loggedOut: true, error: null })
 })
 
 http.listen(process.env.LISTEN_PORT || 8080, async () => {
   log.info(`RCON web interface started on port ${process.env.LISTEN_PORT || 8080}.`)
-  await init(http)
+  try {
+    await init(http)
+  } catch (err) {
+    log.error('An error occurred in the WebSocket server:', err)
+  }
 })

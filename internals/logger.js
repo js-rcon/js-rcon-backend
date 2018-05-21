@@ -5,7 +5,7 @@ module.exports = new (winston.Logger)({
     new (winston.transports.Console)({
       timestamp: true,
       colorize: true,
-      level: global.devMode ? 'debug' : 'info',
+      level: global.devMode ? 'silly' : 'info',
       humanReadableUnhandledException: true,
       json: false
     })
