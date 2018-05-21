@@ -28,10 +28,18 @@ process.title = 'JS-RCON'
 // Ping Redis server
 pingServer()
 
+// In development CORS is enabled completely
+const devCors = cors()
+// In production only localhost and the equivalent IP are allowed
+const prodCors = cors({ origin: [ `http://localhost:${process.env.LISTEN_PORT || 8080}`, `http://127.0.0.1:${process.env.LISTEN_PORT || 8080}` ] })
+
 // Initialize middleware
 if (global.devMode) {
   log.warn('Running in debug mode - enabling CORS.')
-  app.use(cors())
+  app.use(devCors)
+} else {
+  app.use(prodCors)
+  app.options('*', prodCors) // Respond with CORS info to OPTIONS queries
 }
 
 app.use(bodyParser.urlencoded({ extended: true }))
