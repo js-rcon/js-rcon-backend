@@ -16,42 +16,40 @@ function init (httpServer) {
 
   RCONConnection.connect().then(() => {
     global.log.info(`Successfully connected to RCON server at ${process.env.RCON_ADDRESS}.`)
-  }).catch(err => {
-    global.log.error(`Could not connect to RCON server: ${err}`)
-  })
 
-  // Authentication
-  require('socketio-auth')(WSS, {
-    authenticate: auth,
-    postAuthenticate: postAuth,
-    disconnect: disconnect,
-    timeout: 1500 // Keep socket dangling for a max of 1,5 seconds before dropping the connection
-  })
-  
-  setInterval(() => {
-    let aliveSockets = Object.keys(WSS.sockets.connected).map(socketId => WSS.sockets.connected[socketId])
-    heartbeat(RCONConnection, aliveSockets)
-  }, 2000)
-
-  WSS.on('connection', (socket) => {
-    global.log.debug(`Websocket connection opened.`)
-
-    socket.on('message', (msg) => {
-      try {
-        msg = JSON.parse(msg)
-      } catch (e) {
-        global.log.error(`Could not parse socket message to JSON: ${msg}`)
-        socket.close()
-      }
-
-      if (!msg.op || !msg.id) {
-        global.log.error(`Received malformed socket message: ${msg}`)
-        socket.close()
-      }
-
-      WSMethods[msg.op](RCONConnection, socket, msg)
+    // Authentication
+    require('socketio-auth')(WSS, {
+      authenticate: auth,
+      postAuthenticate: postAuth,
+      disconnect: disconnect,
+      timeout: 1500 // Keep socket dangling for a max of 1,5 seconds before dropping the connection
     })
-  })
+
+    setInterval(() => {
+      const aliveSockets = Object.keys(WSS.sockets.connected).map(socketId => WSS.sockets.connected[socketId])
+      heartbeat(RCONConnection, aliveSockets)
+    }, 2000)
+
+    WSS.on('connection', (socket) => {
+      global.log.debug(`Websocket connection opened.`)
+
+      socket.on('message', (msg) => {
+        try {
+          msg = JSON.parse(msg)
+        } catch (e) {
+          global.log.error(`Could not parse socket message to JSON: ${msg}`)
+          socket.close()
+        }
+
+        if (!msg.op || !msg.id) {
+          global.log.error(`Received malformed socket message: ${msg}`)
+          socket.close()
+        }
+
+        WSMethods[msg.op](RCONConnection, socket, msg)
+      })
+    })
+  }).catch(err => global.log.error(`Could not connect to RCON server: ${err.message}. Please ensure your server is running and restart.`))
 }
 
 function auth (socket, data, callback) {

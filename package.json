@@ -1,7 +1,6 @@
 {
   "name": "js-rcon-backend",
   "version": "1.0.0",
-  "description": "Backend for JS-RCON, the modern web-based Team Fortress 2 server controller.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js -p",
@@ -25,6 +24,15 @@
     "url": "https://github.com/js-rcon/js-rcon-backend/issues"
   },
   "homepage": "https://github.com/js-rcon/js-rcon-backend#readme",
+  "devDependencies": {
+    "eslint": "^4.19.1",
+    "eslint-config-standard": "^11.0.0",
+    "eslint-plugin-import": "^2.11.0",
+    "eslint-plugin-node": "^6.0.1",
+    "eslint-plugin-promise": "^3.7.0",
+    "eslint-plugin-standard": "^3.0.1",
+    "nodemon": "^1.17.3"
+  },
   "dependencies": {
     "body-parser": "^1.18.2",
     "cors": "^2.8.4",
@@ -43,14 +51,5 @@
     "steam-web": "^0.7.0",
     "steamid": "^1.1.0",
     "winston": "^2.4.1"
-  },
-  "devDependencies": {
-    "eslint": "^4.19.1",
-    "eslint-config-standard": "^11.0.0",
-    "eslint-plugin-import": "^2.11.0",
-    "eslint-plugin-node": "^6.0.1",
-    "eslint-plugin-promise": "^3.7.0",
-    "eslint-plugin-standard": "^3.0.1",
-    "nodemon": "^1.17.3"
   }
 }

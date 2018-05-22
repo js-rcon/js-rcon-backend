@@ -9,94 +9,94 @@ if (process.env.STEAM_API_KEY) {
     format: 'json'
   })
 } else {
-  global.logger.warn('No Steam API key provided, player list functionality will be limited.')
+  global.log.warn('No Steam API key provided, player list functionality will be limited.')
 }
 
 let connectedUsers = []
 
 function populateInfoConnectedUsers (tempUsers) {
   return new Promise((resolve, reject) => {
-    tempUsers.map((user) => {
-      if (!user.steamid64) {
-        user.steamid64 = new SteamID(user.SteamID).getSteamID64()
-        return user
-      } else {
-        return user
-      }
+    // Patch in SteamID64s for users without them
+    tempUsers.map(user => {
+      if (!user.steamid64) user.steamid64 = new SteamID(user.SteamID).getSteamID64()
+      return user
     })
+
     let needsMoreInfo = []
     tempUsers.forEach((user) => {
       if (!user.avatarmedium) {
         needsMoreInfo.push(user.steamid64)
       }
     })
-    if (needsMoreInfo.length !== 0) {
+
+    if (needsMoreInfo.length > 0) {
       steamInfoFetcher.getPlayerSummaries({
         steamids: needsMoreInfo,
         callback: (err, data) => {
           if (err) reject(err)
           else {
-            data.response.players.forEach((infoPlayer) => {
+            data.response.players.forEach(infoPlayer => {
+              // Patch in the data received from the server
               let userToChange = tempUsers.find(u => u.steamid64 === infoPlayer.steamid)
               userToChange.avatarmedium = infoPlayer.avatarmedium
               userToChange.profileurl = infoPlayer.profileurl
-              if (infoPlayer.communityvisibilitystate === 1) {
-                userToChange.private = true
-              } else {
-                userToChange.private = false
-              }
-              if ((new Date().getTime() - new Date(infoPlayer.timecreated * 1000).getTime()) < 604800000) {
-                userToChange.young = true
-              } else if (!isNaN(new Date(infoPlayer.timecreated))) {
-                userToChange.young = false
-              } else {
-                userToChange.young = 'Private profile, cannot check'
+
+              // Check if user is private
+              infoPlayer.communityvisibilitystate === 1 ? userToChange.private = true : userToChange.private = false
+
+              // Check for private profile
+              if (isNaN(new Date(infoPlayer.timecreated))) userToChange.young = 'Private profile, cannot check' // TODO: Return null for private profile?
+              else {
+                userToChange.young = false // Implicitly cast user as not young unless criteria is met
+                // Check if the account is newer than one week
+                if ((Date.now() - new Date(infoPlayer.timecreated * 1000).getTime()) < 604800000) userToChange.young = true
               }
             })
             resolve(tempUsers)
           }
         }
       })
-    } else {
-      resolve(tempUsers)
-    }
+    } else resolve(tempUsers) // No additional information required, resolve as such
   })
 }
 
 module.exports = (RCONConnection, websockets) => {
   return new Promise((resolve, reject) => {
-    RCONConnection.command('sm_plist').then((response) => {
-      let lines = response.split('\n') // Split multiline text into separate lines
+    RCONConnection.command('sm_plist').then(response => {
+      const lines = response.split('\n') // Split multiline text into separate lines
       lines.splice(0, 1) // remove top two lines of dashes
       lines.splice(1, 1) // remove dashes beneath column names
       lines.splice(lines.length - 2, lines.length) // remove bottom 3 lines of dashes
 
-      let newtext = lines.join('\n') // rejoin into multiline string
-      let users = parseColumns(newtext) // parse player list into object
-      if (connectedUsers.length === 0 && users.length >= 1) {
-        connectedUsers = users
+      const newtext = lines.join('\n') // rejoin into multiline string
+      const usersOnServer = parseColumns(newtext) // parse player list into object
+
+      // If there is no player data or a data mismatch is evident, refresh data
+      // FIXME: If user amount on server changes but players change this will not register, there needs to be a more adequate comparison
+      if ((connectedUsers.length === 0 && usersOnServer.length > 0) || connectedUsers.length !== usersOnServer.length) {
+        connectedUsers = usersOnServer
       }
-      if (connectedUsers.length !== users.length) {
-        connectedUsers = users
-      }
+
       if (steamInfoFetcher) {
-        populateInfoConnectedUsers(connectedUsers).then((populatedUsers) => {
+        populateInfoConnectedUsers(connectedUsers).then(populatedUsers => {
+          // FIXME: This is similarly vulnerable as the previous FIXME
           if (connectedUsers.map(u => u.steamid64).length !== populatedUsers.map(u => u.steamid64).length) {
             connectedUsers = populatedUsers
           }
-          websockets.forEach((websocket) => {
+
+          websockets.forEach(websocket => {
             websocket.send(JSON.stringify({
               op: 'HEARTBEAT_RESPONSE',
               c: connectedUsers
             }))
           })
-        }).catch(global.log.error)
+        }).catch(err => global.log.error(`An error occurred when sending the hearbeat response:`, err))
       } else {
-        websockets.forEach((websocket) => {
+        websockets.forEach(websocket => {
           websocket.send(JSON.stringify({
             op: 'HEARTBEAT_RESPONSE',
             c: connectedUsers
-          }))
+          })).catch(err => global.log.error(`An error occurred when sending the hearbeat response:`, err))
         })
       }
     })

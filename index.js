@@ -8,6 +8,15 @@ global.devMode = global.cliOptions.includes('-d') || global.cliOptions.includes(
 
 const log = require('./internals/logger')
 global.log = log
+global.wserror = (filename, err) => {
+  // Get file name
+  const file = filename.split(require('path').sep)[filename.split(require('path').sep).length - 1]
+  log.error(`An error occurred when sending WS message from ${file}:`, err)
+}
+global.rconerror = (filename, err) => {
+  const file = filename.split(require('path').sep)[filename.split(require('path').sep).length - 1]
+  log.error(`An error occurred when sending RCON command from ${file}:`, err)
+}
 
 // MAIN APP
 
