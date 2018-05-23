@@ -1,18 +1,16 @@
 // PRESTART
 
-// CLI options passed to the script, minus 'node' and file path
+// Environment
+require('dotenv').config()
+
+// CLI options passed to the script, minus 'node file.js'
 global.cliOptions = process.argv.slice(2)
 
-// Determine environment
+// Determine if running in debug mode
 global.devMode = global.cliOptions.includes('-d') || global.cliOptions.includes('--debug') || false
 
 const log = require('./internals/logger')
 global.log = log
-global.wserror = (filename, err) => {
-  // Get file name
-  const file = filename.split(require('path').sep)[filename.split(require('path').sep).length - 1]
-  log.error(`An error occurred when sending WS message from ${file}:`, err)
-}
 global.rconerror = (filename, err) => {
   const file = filename.split(require('path').sep)[filename.split(require('path').sep).length - 1]
   log.error(`An error occurred when sending RCON command from ${file}:`, err)
@@ -30,7 +28,6 @@ const helmet = require('helmet')
 const { checkCredentials } = require('./internals/users')
 const { init } = require('./internals/ws')
 const { pingServer, initSession, getSession, terminateSession } = require('./internals/session')
-require('dotenv').config()
 
 process.title = 'JS-RCON'
 

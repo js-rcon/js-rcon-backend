@@ -6,7 +6,7 @@ module.exports = (RCONConnection, websocket, msg) => {
           op: 'MAPCHANGE_REPLY',
           c: true,
           id: msg.id
-        })).catch(err => global.wserror(__filename, err))
+        }))
       })
     }, 3000)
   }).catch(err => global.rconerror(__filename, err))

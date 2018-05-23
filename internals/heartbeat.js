@@ -63,7 +63,7 @@ function populateInfoConnectedUsers (tempUsers) {
 module.exports = (RCONConnection, websockets) => {
   return new Promise((resolve, reject) => {
     RCONConnection.command('sm_plist').then(response => {
-      const lines = response.split('\n') // Split multiline text into separate lines
+      const lines = response.split('\n')
       lines.splice(0, 1) // remove top two lines of dashes
       lines.splice(1, 1) // remove dashes beneath column names
       lines.splice(lines.length - 2, lines.length) // remove bottom 3 lines of dashes
@@ -71,15 +71,11 @@ module.exports = (RCONConnection, websockets) => {
       const newtext = lines.join('\n') // rejoin into multiline string
       const usersOnServer = parseColumns(newtext) // parse player list into object
 
-      // If there is no player data or a data mismatch is evident, refresh data
-      // FIXME: If user amount on server changes but players change this will not register, there needs to be a more adequate comparison
-      if ((connectedUsers.length === 0 && usersOnServer.length > 0) || connectedUsers.length !== usersOnServer.length) {
-        connectedUsers = usersOnServer
-      }
+      // If a data mismatch is evident, refresh data
+      if (connectedUsers.length !== usersOnServer.length) connectedUsers = usersOnServer
 
       if (steamInfoFetcher) {
         populateInfoConnectedUsers(connectedUsers).then(populatedUsers => {
-          // FIXME: This is similarly vulnerable as the previous FIXME
           if (connectedUsers.map(u => u.steamid64).length !== populatedUsers.map(u => u.steamid64).length) {
             connectedUsers = populatedUsers
           }
@@ -90,15 +86,18 @@ module.exports = (RCONConnection, websockets) => {
               c: connectedUsers
             }))
           })
-        }).catch(err => global.log.error(`An error occurred when sending the hearbeat response:`, err))
+        }).catch(err => global.log.error(`An error occurred when getting player summaries:`, err))
       } else {
         websockets.forEach(websocket => {
           websocket.send(JSON.stringify({
             op: 'HEARTBEAT_RESPONSE',
             c: connectedUsers
-          })).catch(err => global.log.error(`An error occurred when sending the hearbeat response:`, err))
+          }))
         })
       }
+    }).catch(err => {
+      if (err.message === 'Command lost') global.log.debug('Command lost during heartbeat.')
+      else global.rconerror(__filename, err)
     })
   })
 }

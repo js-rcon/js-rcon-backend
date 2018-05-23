@@ -4,7 +4,7 @@ const WSMethods = require(path.join(__dirname, '/wsmethods/index'))(path.join(__
 const heartbeat = require('./heartbeat')
 
 let WSS
-let RCONConnection = require('srcds-rcon')
+let RCONConnection = require('srcds-rcon') // TODO: Why is this not persisted
 
 function init (httpServer) {
   WSS = require('socket.io')(httpServer)

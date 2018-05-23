@@ -6,13 +6,13 @@ module.exports = (RCONConnection, websocket, msg) => {
         op: 'SLAP_RESPONSE',
         c: true,
         id: 21
-      })).catch(err => global.wserror(__filename, err))
+      }))
     } else {
       websocket.send(JSON.stringify({
         op: 'SLAP_RESPONSE',
         c: false,
         id: 21
-      })).catch(err => global.wserror(__filename, err))
+      }))
     }
   }).catch(err => global.rconerror(__filename, err))
 }

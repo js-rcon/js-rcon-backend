@@ -5,7 +5,7 @@ module.exports = (RCONConnection, websocket, msg) => {
         op: 'EVAL_RESPONSE',
         c: response,
         id: msg.id
-      })).catch(err => global.wserror(__filename, err))
+      }))
     }).catch(err => global.rconerror(__filename, err))
   })
 }
