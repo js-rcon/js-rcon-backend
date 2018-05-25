@@ -1,5 +1,5 @@
 module.exports = (RCONConnection, websocket, msg) => {
-  RCONConnection.command(`sm_mute ${msg.user}`).then((response) => {
+  RCONConnection.command(`sm_mute ${msg.user}`).then(response => {
     if (response.includes(`Muted ${msg.user}`)) {
       websocket.send(JSON.stringify({
         op: 'MUTE_REPLY',
@@ -13,5 +13,5 @@ module.exports = (RCONConnection, websocket, msg) => {
         id: msg.id
       }))
     }
-  })
+  }).catch(err => global.rconerror(__filename, err))
 }

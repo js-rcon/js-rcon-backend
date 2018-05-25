@@ -1,6 +1,6 @@
 module.exports = (RCONConnection, websocket, msg) => {
   if (!msg.time) websocket.close()
-  RCONConnection.command(`sm_burn ${msg.user} ${msg.time}`).then((response) => {
+  RCONConnection.command(`sm_burn ${msg.user} ${msg.time}`).then(response => {
     if (response.includes(`Set ${msg.user} on fire`)) {
       websocket.send(JSON.stringify({
         op: 'BURN_REPLY',
@@ -14,5 +14,5 @@ module.exports = (RCONConnection, websocket, msg) => {
         id: msg.id
       }))
     }
-  })
+  }).catch(err => global.rconerror(__filename, err))
 }

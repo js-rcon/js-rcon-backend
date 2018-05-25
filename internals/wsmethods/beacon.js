@@ -1,5 +1,5 @@
 module.exports = (RCONConnection, websocket, msg) => {
-  RCONConnection.command(`sm_beacon ${msg.user}`).then((response) => {
+  RCONConnection.command(`sm_beacon ${msg.user}`).then(response => {
     if (response.includes(`toggled beacon on ${msg.user}`)) {
       websocket.send(JSON.stringify({
         op: 'BEACON_REPLY',
@@ -13,5 +13,5 @@ module.exports = (RCONConnection, websocket, msg) => {
         id: msg.id
       }))
     }
-  })
+  }).catch(err => global.rconerror(__filename, err))
 }

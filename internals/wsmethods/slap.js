@@ -1,6 +1,6 @@
 module.exports = (RCONConnection, websocket, msg) => {
   if (!msg.damage) websocket.close()
-  RCONConnection.command(`sm_slap ${msg.user} ${msg.damage}`).then((response) => {
+  RCONConnection.command(`sm_slap ${msg.user} ${msg.damage}`).then(response => {
     if (response.includes(`Slapped ${msg.user}`)) {
       websocket.send(JSON.stringify({
         op: 'SLAP_RESPONSE',
@@ -14,5 +14,5 @@ module.exports = (RCONConnection, websocket, msg) => {
         id: 21
       }))
     }
-  })
+  }).catch(err => global.rconerror(__filename, err))
 }

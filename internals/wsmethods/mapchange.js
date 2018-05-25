@@ -9,5 +9,5 @@ module.exports = (RCONConnection, websocket, msg) => {
         }))
       })
     }, 3000)
-  })
+  }).catch(err => global.rconerror(__filename, err))
 }

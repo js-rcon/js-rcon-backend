@@ -1,93 +1,159 @@
+// PRESTART
+
+// Environment
+require('dotenv').config()
+
+// CLI options passed to the script, minus 'node file.js'
+global.cliOptions = process.argv.slice(2)
+
+// Determine if running in debug mode
+global.devMode = global.cliOptions.includes('-d') || global.cliOptions.includes('--debug') || false
+
+const log = require('./internals/logger')
+global.log = log
+global.rconerror = (filename, err) => {
+  const file = filename.split(require('path').sep)[filename.split(require('path').sep).length - 1]
+  log.error(`An error occurred when sending RCON command from ${file}:`, err)
+}
+
+// MAIN APP
+
 const express = require('express')
 const app = express()
 const http = require('http').Server(app)
 const bodyParser = require('body-parser')
 const cors = require('cors')
 const path = require('path')
-const session = require('express-session')
-const NedbStore = require('nedb-session-store')(session)
-const sessionStore = new NedbStore({inMemoryOnly: true})
-const passport = require('passport')
-const Strategy = require('passport-local').Strategy
-const { checkValidityByUsername, checkValidityById } = require('./internals/users')
-const log = require('./internals/logger')
+const helmet = require('helmet')
+const { checkCredentials } = require('./internals/users')
+const { init } = require('./internals/ws')
+const { pingServer, initSession, getSession, terminateSession } = require('./internals/session')
 
-require('dotenv').config()
+process.title = 'JS-RCON'
 
-global.log = log // Due to having so many small files, having the logger be global will reduce unnecessary repetition.
+// Ping Redis server
+pingServer()
 
-// Use local user and password authentication
-passport.use(new Strategy(
-  (username, password, callback) => {
-    const user = checkValidityByUsername(username, password)
-
-    if (user) return callback(null, user) // Successful authentication
-    else return callback(null, false)
-  })
-)
-
-passport.serializeUser((user, callback) => {
-  callback(null, user.id)
-})
-
-passport.deserializeUser((id, callback) => {
-  const user = checkValidityById(id)
-
-  if (user) return callback(null, user)
-  else return callback(null, false)
-})
+// In development CORS is enabled completely
+const devCors = cors()
+// In production only localhost and the equivalent IP are allowed
+const prodCors = cors({ origin: [ `http://localhost:${process.env.LISTEN_PORT || 8080}`, `http://127.0.0.1:${process.env.LISTEN_PORT || 8080}` ] })
 
 // Initialize middleware
+if (global.devMode) {
+  log.warn('Running in debug mode - enabling CORS.')
+  app.use(devCors)
+} else {
+  app.use(prodCors)
+  app.options('*', prodCors) // Respond with CORS info to OPTIONS queries
+}
 
-app.use(cors())
-app.use(require('cookie-parser')())
-app.use(require('body-parser').urlencoded({ extended: true }))
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  store: sessionStore,
-  rolling: true
-}))
+app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
-app.use(passport.initialize())
-app.use(passport.session())
+app.use(helmet({ noCache: true }))
 
-// This is redundant for now, but it will eventually be used to serve the frontend
-// For now it's just future proofing
+// Serve frontend as satic assets
 app.use(express.static(path.join(__dirname, '/public')))
 
-app.get('/status', (req, res) => {
-  if (req.user) { // A user is already logged in
+app.get('/status', async (req, res) => {
+  let session
+  try {
+    session = await getSession(req.headers['token'])
+  } catch (err) {
+    if (err.message === 'Invalid token format') {
+      log.debug(`[status] Attempted to get session for token "${req.headers['token']}", but the format was invalid.`)
+    } else {
+      log.error(`[status] An error occurred while getting session for token "${req.headers['token']}":`, err)
+      res.status(500).send({ username: null, token: null, error: err })
+      return
+    }
+  }
+
+  if (!session || Object.keys(session).length === 0) { // Session is not active
     res.status(200).send({
-      username: req.user.username
+      username: null,
+      token: null,
+      error: null
     })
-  } else { // No active login
+  } else {
     res.status(200).send({
-      username: null
+      username: session.id,
+      token: req.headers['token'], // Returning the same token as it is valid
+      error: null
     })
   }
 })
 
-app.post('/auth',
-  passport.authenticate('local'),
-  (req, res) => {
-    global.log.info(`User "${req.user.username}" logged in.`)
-    res.status(200).send({
-      username: req.user.username
-    })
-  })
+// Note: Only the /auth route supports username/password authentication, all others use session IDs
+// This is because /auth is used for explicit login and /status is used for session validity checks
 
-app.post('/logout', (req, res) => {
-  if (!req.user) res.redirect('/') // Plain redirect for no session
-  else {
-    log.info(`User "${req.user.username}" logged out.`)
-    req.logout()
-    res.redirect('/')
+app.post('/auth', async (req, res) => {
+  if (!req.body.username || !req.body.password) {
+    res.status(400).send({
+      username: null,
+      token: null,
+      error: 'Missing request body parameter \'username\' or \'password\''
+    })
+  }
+
+  const authed = checkCredentials(req.body.username, req.body.password)
+
+  if (!authed) {
+    log.warn(`[auth] Received invalid login for user "${req.body.username}" (IP ${req.ip}).`)
+
+    res.status(401).send({
+      username: null,
+      token: null,
+      error: 'Invalid username or password'
+    })
+  } else {
+    let token
+    try {
+      token = await initSession(req.body.username, req.ip)
+    } catch (err) {
+      log.error(`[auth] An error occurred while initialising session for user "${req.body.username}" (IP ${req.ip}):`, err)
+      res.status(500).send({
+        username: null,
+        token: null,
+        error: err
+      })
+      return
+    }
+
+    log.info(`User "${req.body.username}" (IP ${req.ip}) logged in.`)
+
+    res.status(200).send({
+      username: req.body.username,
+      token: token,
+      error: null
+    })
   }
 })
 
-http.listen(process.env.LISTEN_PORT, () => {
-  log.info(`RCON web interface started on port ${process.env.LISTEN_PORT}.`)
-  require('./internals/ws').init(http, sessionStore) // Pass http and sessionStore so websocket server middleware can piggyback
+app.post('/logout', async (req, res) => {
+  if (req.body.token) {
+    try {
+      await terminateSession(req.body.token)
+    } catch (err) {
+      if (err.message === 'Invalid token format') {
+        log.warn(`[logout] Attempted to terminate session for token "${req.body.token}", but the format was invalid.`)
+      } else {
+        log.error(`[logout] An error occured while terminating session "${req.body.token}":`, err)
+        res.status(500).send({ loggedOut: false, error: err })
+        return
+      }
+    }
+  }
+
+  log.info(`User "${req.body.username || '<unknown user>'}" (IP: ${req.ip}) logged out.`)
+  res.status(200).send({ loggedOut: true, error: null })
+})
+
+http.listen(process.env.LISTEN_PORT || 8080, async () => {
+  log.info(`RCON web interface started on port ${process.env.LISTEN_PORT || 8080}.`)
+  try {
+    await init(http)
+  } catch (err) {
+    log.error('An error occurred in the WebSocket server:', err)
+  }
 })
