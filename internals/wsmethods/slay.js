@@ -4,13 +4,13 @@ module.exports = (RCONConnection, websocket, msg) => {
       websocket.send(JSON.stringify({
         op: 'SLAY_RESPONSE',
         c: true,
-        id: 21
+        id: msg.id
       }))
     } else {
       websocket.send(JSON.stringify({
         op: 'SLAY_RESPONSE',
         c: false,
-        id: 21
+        id: msg.id
       }))
     }
   }).catch(err => global.rconerror(__filename, err))
