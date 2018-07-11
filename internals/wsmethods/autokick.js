@@ -1,17 +1,17 @@
 module.exports = (RCONConnection, websocket, msg) => {
   if (!msg.user) global.socketerror(__filename, websocket, `Missing property 'user'`)
 
-  RCONConnection.command(`sm_slay ${msg.user}`).then(response => {
-    if (response.includes(`Slayed ${msg.user}`)) {
+  RCONConnection.command(`sm_kick ${msg.user} ${msg.reason ? msg.reason : 'No reason specified'}`).then(response => {
+    if (response.includes(`Kicked ${msg.user}`)) {
       websocket.send(JSON.stringify({
-        op: 'SLAY_RESPONSE',
-        c: true,
+        op: 'AUTOKICK_RESPONSE',
+        c: `Auto-protect kicked user "${msg.user}"`,
         id: msg.id
       }))
     } else {
       websocket.send(JSON.stringify({
-        op: 'SLAY_RESPONSE',
-        c: false,
+        op: 'AUTOKICK_RESPONSE',
+        c: `Auto-protect failed to kick user "${msg.user}"`,
         id: msg.id
       }))
     }

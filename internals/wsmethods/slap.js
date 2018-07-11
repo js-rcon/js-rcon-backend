@@ -1,6 +1,7 @@
 module.exports = (RCONConnection, websocket, msg) => {
-  if (!msg.damage) websocket.close()
-  RCONConnection.command(`sm_slap ${msg.user} ${msg.damage}`).then(response => {
+  if (!msg.user) global.socketerror(__filename, websocket, `Missing property 'user'`)
+
+  RCONConnection.command(`sm_slap ${msg.user} ${msg.damage ? msg.damage : '5'}`).then(response => {
     if (response.includes(`Slapped ${msg.user}`)) {
       websocket.send(JSON.stringify({
         op: 'SLAP_RESPONSE',

@@ -3,13 +3,10 @@ const { getSession } = require('./session')
 const WSMethods = require(path.join(__dirname, '/wsmethods/index'))(path.join(__dirname, '/wsmethods/'))
 const heartbeat = require('./heartbeat')
 
-let WSS
-let RCONConnection = require('srcds-rcon') // TODO: Why is this not persisted
-
 function init (httpServer) {
-  WSS = require('socket.io')(httpServer)
+  const WSS = require('socket.io')(httpServer)
 
-  RCONConnection = RCONConnection({
+  const RCONConnection = require('srcds-rcon')({
     address: process.env.RCON_ADDRESS,
     password: process.env.RCON_PASSWORD
   })
@@ -38,15 +35,25 @@ function init (httpServer) {
           msg = JSON.parse(msg)
         } catch (e) {
           global.log.error(`Could not parse socket message to JSON: ${msg}`)
-          socket.close()
         }
 
         if (!msg.op || !msg.id) {
           global.log.error(`Received malformed socket message: ${msg}`)
-          socket.close()
+          socket.send(JSON.stringify({
+            op: 'ERROR',
+            c: `Malformed socket message; missing property 'op' (Received ${msg.op}) and/or 'id' (Received ${msg.id})`,
+            id: 'error'
+          }))
         }
 
-        WSMethods[msg.op](RCONConnection, socket, msg)
+        if (WSMethods[msg.op]) WSMethods[msg.op](RCONConnection, socket, msg)
+        else {
+          socket.send(JSON.stringify({
+            op: 'ERROR',
+            c: `Operation ${msg.op} not found`,
+            id: 'error'
+          }))
+        }
       })
     })
   }).catch(err => global.log.error(`Could not connect to RCON server: ${err.message}. Please ensure your server is running and restart.`))

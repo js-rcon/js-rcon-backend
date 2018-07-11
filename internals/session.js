@@ -8,7 +8,7 @@ const redisSessions = new RedisSessionStore({
 function pingServer () {
   redisSessions.ping((err, res) => {
     if (err) global.log.error(`An error occured while pinging the Redis server: ${err}`)
-    else global.log.info('Connected to Redis server.')
+    else global.log.info(`Connected to Redis server at http://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT}.`)
   })
 }
 

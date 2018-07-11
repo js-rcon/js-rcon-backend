@@ -1,5 +1,8 @@
 // PRESTART
 
+// Load native extensions
+require('./internals/nativeExtensions')
+
 // Environment
 require('dotenv').config()
 
@@ -11,9 +14,20 @@ global.devMode = global.cliOptions.includes('-d') || global.cliOptions.includes(
 
 const log = require('./internals/logger')
 global.log = log
+
 global.rconerror = (filename, err) => {
   const file = filename.split(require('path').sep)[filename.split(require('path').sep).length - 1]
   log.error(`An error occurred when sending RCON command from ${file}:`, err)
+}
+
+global.socketerror = (filename, websocket, err) => {
+  const file = filename.split(require('path').sep)[filename.split(require('path').sep).length - 1]
+  log.error(`An error occurred when sending RCON command from ${file}:`, err)
+  websocket.send(JSON.stringify({
+    op: 'ERROR',
+    c: err,
+    id: 'error'
+  }))
 }
 
 // MAIN APP
