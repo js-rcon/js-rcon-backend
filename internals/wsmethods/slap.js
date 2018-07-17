@@ -5,13 +5,13 @@ module.exports = (RCONConnection, websocket, msg) => {
     if (response.includes(`Slapped ${msg.user}`)) {
       websocket.send(JSON.stringify({
         op: 'SLAP_RESPONSE',
-        c: true,
+        c: `Slapped ${msg.user} for ${msg.damage ? msg.damage : '5'} damage.`,
         id: msg.id
       }))
     } else {
       websocket.send(JSON.stringify({
         op: 'SLAP_RESPONSE',
-        c: false,
+        c: `Failed to slap ${msg.user}!`,
         id: msg.id
       }))
     }

@@ -3,13 +3,13 @@ module.exports = (RCONConnection, websocket, msg) => {
     if (response.includes(`Kicked ${msg.user}`)) {
       websocket.send(JSON.stringify({
         op: 'KICK_REPLY',
-        c: true,
+        c: `Kicked ${msg.user}${msg.reason ? ` for reason ${msg.reason}` : '.'}`,
         id: msg.id
       }))
     } else {
       websocket.send(JSON.stringify({
         op: 'KICK_REPLY',
-        c: false,
+        c: `Failed to kick ${msg.user}`,
         id: msg.id
       }))
     }

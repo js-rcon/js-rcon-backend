@@ -5,13 +5,13 @@ module.exports = (RCONConnection, websocket, msg) => {
     if (response.includes(`banned ${msg.user}`)) {
       websocket.send(JSON.stringify({
         op: 'BAN_REPLY',
-        c: true,
+        c: `Banned ${msg.user}${msg.reason ? ` for reason ${msg.reason}` : ''}${msg.time ? ` for ${msg.time} minutes` : ''}.`,
         id: msg.id
       }))
     } else {
       websocket.send(JSON.stringify({
         op: 'BAN_REPLY',
-        c: false,
+        c: `Failed to ban ${msg.user}!`,
         id: msg.id
       }))
     }

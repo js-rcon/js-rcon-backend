@@ -5,13 +5,13 @@ module.exports = (RCONConnection, websocket, msg) => {
     if (response.includes(`toggled beacon on ${msg.user}`)) {
       websocket.send(JSON.stringify({
         op: 'BEACON_REPLY',
-        c: true,
+        c: `Toggled beacon on ${msg.user}.`,
         id: msg.id
       }))
     } else {
       websocket.send(JSON.stringify({
         op: 'BEACON_REPLY',
-        c: false,
+        c: `Failed to toggle beacon on ${msg.user}!`,
         id: msg.id
       }))
     }

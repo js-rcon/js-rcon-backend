@@ -5,13 +5,13 @@ module.exports = (RCONConnection, websocket, msg) => {
     if (response.includes(`Set ${msg.user} on fire`)) {
       websocket.send(JSON.stringify({
         op: 'BURN_REPLY',
-        c: true,
+        c: `Set ${msg.user} on fire for ${msg.time ? msg.time : '5'} seconds.`,
         id: msg.id
       }))
     } else {
       websocket.send(JSON.stringify({
         op: 'BURN_REPLY',
-        c: false,
+        c: `Failed to set ${msg.user} on fire!`,
         id: msg.id
       }))
     }

@@ -5,13 +5,13 @@ module.exports = (RCONConnection, websocket, msg) => {
     if (response.includes(`Gagged ${msg.user}`)) {
       websocket.send(JSON.stringify({
         op: 'GAG_REPLY',
-        c: true,
+        c: `Gagged ${msg.user}.`,
         id: msg.id
       }))
     } else {
       websocket.send(JSON.stringify({
         op: 'GAG_REPLY',
-        c: false,
+        c: `Failed to gag ${msg.user}!`,
         id: msg.id
       }))
     }

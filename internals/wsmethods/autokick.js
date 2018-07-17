@@ -5,13 +5,13 @@ module.exports = (RCONConnection, websocket, msg) => {
     if (response.includes(`Kicked ${msg.user}`)) {
       websocket.send(JSON.stringify({
         op: 'AUTOKICK_RESPONSE',
-        c: `Auto-protect kicked user "${msg.user}"`,
+        c: `Auto-kicked ${msg.user} for profile being new or private.`,
         id: msg.id
       }))
     } else {
       websocket.send(JSON.stringify({
         op: 'AUTOKICK_RESPONSE',
-        c: `Auto-protect failed to kick user "${msg.user}"`,
+        c: `Auto-kicked ${msg.user} for profile being new or private.`,
         id: msg.id
       }))
     }

@@ -6,7 +6,7 @@ module.exports = (RCONConnection, websocket, msg) => {
       RCONConnection.command(`sm_map ${msg.c}`).then(() => {
         websocket.send(JSON.stringify({
           op: 'MAPCHANGE_REPLY',
-          c: true,
+          c: `Changed map to ${msg.c}.`,
           id: msg.id
         }))
       })

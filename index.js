@@ -165,9 +165,5 @@ app.post('/logout', async (req, res) => {
 
 http.listen(process.env.LISTEN_PORT || 8080, async () => {
   log.info(`RCON web interface started on port ${process.env.LISTEN_PORT || 8080}.`)
-  try {
-    await init(http)
-  } catch (err) {
-    log.error('An error occurred in the WebSocket server:', err)
-  }
+  init(http)
 })

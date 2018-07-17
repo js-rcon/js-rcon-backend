@@ -5,13 +5,13 @@ module.exports = (RCONConnection, websocket, msg) => {
     if (response.includes(`Muted ${msg.user}`)) {
       websocket.send(JSON.stringify({
         op: 'MUTE_REPLY',
-        c: true,
+        c: `Muted ${msg.user}.`,
         id: msg.id
       }))
     } else {
       websocket.send(JSON.stringify({
         op: 'MUTE_REPLY',
-        c: false,
+        c: `Failed to mute ${msg.user}!`,
         id: msg.id
       }))
     }

@@ -5,13 +5,13 @@ module.exports = (RCONConnection, websocket, msg) => {
     if (response.includes(`Ungagged ${msg.user}`)) {
       websocket.send(JSON.stringify({
         op: 'UNGAG_REPLY',
-        c: true,
+        c: `Ungagged ${msg.user}.`,
         id: msg.id
       }))
     } else {
       websocket.send(JSON.stringify({
         op: 'UNGAG_REPLY',
-        c: false,
+        c: `Failed to ungag ${msg.user}!`,
         id: msg.id
       }))
     }
