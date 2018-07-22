@@ -11,7 +11,11 @@ function init (httpServer) {
     password: process.env.RCON_PASSWORD
   })
 
-  RCONConnection.connect().then(() => {
+  const maxRetries = process.env.MAX_CONNECT_RETRIES || 5
+  const retryTimeout = process.env.CONNECT_TIMEOUT || 1500
+  let currentRetries = 0
+
+  const connectHandler = () => {
     global.log.info(`Successfully connected to RCON server at ${process.env.RCON_ADDRESS}.`)
 
     // Authentication
@@ -56,7 +60,37 @@ function init (httpServer) {
         }
       })
     })
-  }).catch(err => global.log.error(`Could not connect to RCON server: ${err.message}. Please ensure your server is running and restart.`))
+  }
+
+  const timeoutHandler = (fn, resolveHandler, rejectHandler) => {
+    if (currentRetries < maxRetries) {
+      currentRetries = ++currentRetries
+      global.log.warn(`RCON connection timed out. Retrying... (${currentRetries}/${maxRetries} attempts)`)
+      fn().then(() => resolveHandler()).catch(() => rejectHandler(fn, resolveHandler, rejectHandler))
+    } else {
+      global.log.error(`RCON connection timed out; max retries (${maxRetries}) reached. Please ensure your server is running and restart.`)
+    }
+  }
+
+  timeoutAndRetry(RCONConnection.connect(), retryTimeout).then(() => {
+    connectHandler()
+  }).catch(() => {
+    timeoutHandler(RCONConnection.connect, connectHandler, timeoutHandler)
+  })
+}
+
+function timeoutAndRetry (promise, timeout) {
+  const timer = new Promise((resolve, reject) => {
+    const id = setTimeout(() => {
+      clearTimeout(id)
+      reject(new Error(`Promise timed out in ${timeout} ms.`))
+    }, timeout)
+  })
+
+  return Promise.race([
+    promise,
+    timer
+  ])
 }
 
 function auth (socket, data, callback) {
