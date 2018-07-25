@@ -163,7 +163,7 @@ app.post('/logout', async (req, res) => {
   res.status(200).send({ loggedOut: true, error: null })
 })
 
-http.listen(process.env.LISTEN_PORT || 8080, async () => {
+http.listen(process.env.LISTEN_PORT || 8080, () => {
   log.info(`RCON web interface started on port ${process.env.LISTEN_PORT || 8080}.`)
   init(http)
 })

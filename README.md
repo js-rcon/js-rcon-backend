@@ -1,107 +1,46 @@
-# JS-RCON-Backend
+# JS-RCON Backend
 
-A lightweight, powerful, and modular RCON powered TF2 server controller. Due to the modularity of this project, it's also possible to remove all the pre-existing modules and add your own for a different game, like CS:GO.
+This repository hosts the code for the server-side component of JS-RCON.
 
-## Getting Started
+## What is JS-RCON?
+
+JS-RCON is a powerful Source Dedicated Server administration GUI built with JavaScript. At the moment the project only supports Team Fortress 2, but more games are planned to be added later.
+
+
+## Installation
 
 ### Prerequisites
 
-Getting what you need is easy! You only need to install NodeJS and Git. The text provided below will install NodeJS version 8 on Ubuntu and other Debian-based systems, along with git.
-```bash
-curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
-sudo apt-get install -y nodejs && sudo apt-get install git -y
-```
+JS-RCON requires the following dependencies:
+
+- [Node.js](https://nodejs.org) (Current version recommended)
+- A Source Dedicated Server on [Windows](https://wiki.teamfortress.com/wiki/Windows_dedicated_server) or [Linux](https://wiki.teamfortress.com/wiki/Linux_dedicated_server)
+- [SourceMod](https://wiki.alliedmods.net/Installing_SourceMod_(simple)) with the [sm_plist](https://forums.alliedmods.net/showthread.php?t=61013) plugin
+- A [Redis](https://redis.io) server
 
 ### Installing
 
-Since this project is so lightweight, the installation procedure is quite small.
+TODO (Submodules need to be accounted for, dist versions need to be decided upon, etc)
 
-**Step 1**
-Clone the git repo and enter the directory
-```
-git clone https://github.com/js-rcon/js-rcon-backend && cd js-ron-backend
-```
+### Configuration
 
-**Step 2**
-Install necessary node modules
-```
-npm i
-```
+Create **.env** and **users.json** files based on their examples ([.env.example](.env.example)) and [users.json.example](users.json.example).
 
-**Step 3**
-Create and edit the necessary files. The only two mandatory files needed for the project to run are `.env` and `users.json`. Rename `.env.example` to `.env` and open it with your choice of a text editor to fill out all fields.
-```bash
-mv .env.example .env
-```
-```
-LISTEN_PORT=8080
+**Note:** It might be a good idea to protect the **.env** and **users.json** files from unauthorised access since passwords and tokens are stored in plain text.
 
-SESSION_SECRET=whateveryouwant
+### Starting
 
-RCON_ADDRESS=xx.xx.xxx.xxx
+TODO (Start method may still change)
 
-RCON_PASSWORD=xyz
-```
+## Technologies used
 
-**Step 4**
-Rename `users.json.example` to `users.json` and edit the user records to your liking.
-```bash
-mv users.json.example users.json
-```
-```json
-{
+The major dependencies of this project are listed here. For full dependency information, see [package.json](package.json).
 
-  "records": [
-
-    { "id": 1, "username": "jack", "password": "secret", "access":   ["*"] },
-
-    { "id": 2, "username": "jill", "password": "birthday", "access": ["*"] }
-
-  ]
-
-}
-```
-
-**Step 5**
-Restrict access to `users.json` and `.env` to enhance security from other system users.
-```bash
-chown 700 users.json .env 
-```
-
-**Step 6**
-Run the project and go to `localhost:8080` to test it.
-```bash
-node index.js
-```
-
-That's it, you're done!
-
-## Built With
-
-* [Express](https://expressjs.com/) - Used to handle incoming http requests
-* [Socket.IO](https://socket.io/) - Used to handle incoming websocket messages, and to send them from the browser
-* [node-srcds-rcon](https://github.com/randunel/node-srcds-rcon) - Used to connect to RCON server
-* [Winston](https://github.com/winstonjs/winston) - Logging errors and other information
-* [Passport](http://www.passportjs.org/) - Base authentication module
-* [passport-local](https://github.com/jaredhanson/passport-local) - Username and password authentication
-* [passport.socketio](https://github.com/jfromaniello/passport.socketio) - Authentication with websockets
-* [NeDB](https://github.com/louischatriot/nedb) - Memory-based session store
-* [nedb-session-store](https://github.com/JamesMGreene/nedb-session-store) - Middleware for storing sessions using NeDB and passport
-
-## Contributing
-
-Guide written soon!
-
-## Authors
-
-* **Curtis Fowler** - *Creator* - [caf203](https://github.com/caf203)
-
-See the list of [contributors](https://github.com/js-rcon/js-rcon-backend/contributors) who participated in this project.
+* [Express.js](https://expressjs.com/)
+* [Socket.io](https://socket.io/)
+* [srcds-rcon](https://github.com/randunel/node-srcds-rcon)
 
 ## License
 
-This project is licensed under the GNU AGPLv3 License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-* **Linus Willner** - *Creator of web interface* - [linuswillner](https://github.com/linuswillner)
+JS-RCON is licensed under the [GNU Affero General Public License](LICENSE).<br>
+JS-RCON © 2018 [Curtis Fowler](https://github.com/caf203) and [Linus Willner](https://github.com/linuswillner).
