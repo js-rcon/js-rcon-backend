@@ -32,8 +32,6 @@ const prodCors = cors({ origin: [ `http://localhost:${process.env.LISTEN_PORT ||
 // Initialise rate limit config
 const ratelimitConfig = new RateLimit({
   windowMs: process.env.RATELIMIT_WINDOW || 5000,
-  delayAfter: process.env.THROTTLE_THRESHOLD || 5,
-  delayMs: process.env.THROTTLE_TIME || 2500,
   max: process.env.BLOCK_THRESHOLD || 15,
   message: 'Too many requests, please try again later.',
   headers: true
@@ -46,6 +44,7 @@ if (global.devMode) {
 } else {
   app.use(prodCors)
   app.options('*', prodCors) // Respond with CORS info to OPTIONS queries
+  app.enable('trust proxy')
 }
 
 app.use(bodyParser.urlencoded({ extended: true }))
