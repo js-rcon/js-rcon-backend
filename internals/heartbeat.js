@@ -45,7 +45,7 @@ function populateInfoConnectedUsers (tempUsers) {
               infoPlayer.communityvisibilitystate === 1 ? userToChange.private = true : userToChange.private = false
 
               // Check for private profile
-              if (isNaN(new Date(infoPlayer.timecreated))) userToChange.young = 'Private profile, cannot check' // TODO: Return null for private profile?
+              if (isNaN(new Date(infoPlayer.timecreated))) userToChange.young = null
               else {
                 userToChange.young = false // Implicitly cast user as not young unless criteria is met
                 // Check if the account is newer than one week
