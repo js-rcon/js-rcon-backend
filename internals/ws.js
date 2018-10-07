@@ -1,9 +1,11 @@
+const ora = require('ora')
 const path = require('path')
 const { getSession } = require('./session')
 const WSMethods = require(path.join(__dirname, '/wsmethods/index'))(path.join(__dirname, '/wsmethods/'))
 const heartbeat = require('./heartbeat')
 
 function init (httpServer) {
+  const rconLog = ora('Initialising RCON connection...').start()
   const WSS = require('socket.io')(httpServer)
 
   const RCONConnection = require('srcds-rcon')({
@@ -16,7 +18,7 @@ function init (httpServer) {
   let currentRetries = 0
 
   const connectHandler = () => {
-    global.log.info(`Successfully connected to RCON server at ${process.env.RCON_ADDRESS}.`)
+    rconLog.succeed(`Connected to RCON server at ${process.env.RCON_ADDRESS}.`)
 
     // Authentication
     require('socketio-auth')(WSS, {
@@ -65,10 +67,12 @@ function init (httpServer) {
   const timeoutHandler = (fn, resolveHandler, rejectHandler) => {
     if (currentRetries < maxRetries) {
       currentRetries = ++currentRetries
-      global.log.warn(`RCON connection timed out. Retrying... (${currentRetries}/${maxRetries} attempts)`)
+      rconLog.color = 'red'
+      rconLog.text = `RCON connection timed out. Retrying... (${currentRetries}/${maxRetries} attempts)`
       fn().then(() => resolveHandler()).catch(() => rejectHandler(fn, resolveHandler, rejectHandler))
     } else {
-      global.log.error(`RCON connection timed out; max retries (${maxRetries}) reached. Please ensure your server is running and restart.`)
+      rconLog.fail(`RCON connection timed out, reached ${maxRetries} retries. Please ensure your server is running and restart this program.`)
+      process.exit(0)
     }
   }
 

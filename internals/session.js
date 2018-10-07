@@ -1,3 +1,4 @@
+const ora = require('ora')
 const RedisSessionStore = require('redis-sessions')
 
 const redisSessions = new RedisSessionStore({
@@ -6,9 +7,11 @@ const redisSessions = new RedisSessionStore({
 })
 
 function pingServer () {
+  const redisLog = ora('Connecting to Redis server...').start()
+
   redisSessions.ping((err, res) => {
-    if (err) global.log.error(`An error occured while pinging the Redis server: ${err}`)
-    else global.log.info(`Connected to Redis server at http://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT}.`)
+    if (err) redisLog.fail(`Could not ping Redis server: ${err}`)
+    else redisLog.succeed(`Connected to Redis server at http://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT}.`)
   })
 }
 

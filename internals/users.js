@@ -1,18 +1,20 @@
+const ora = require('ora')
 const path = require('path')
 const fs = require('fs')
+
+const userLog = ora('Verifying user records...').start()
 
 let records
 const usersFile = fs.readFileSync(path.join(__dirname, '/../users.json'))
 
 try {
   records = JSON.parse(usersFile).records
-  global.log.info('User record file verification successful.')
+  userLog.text = 'User record file verification successful. Verifying format...'
   records.map(r => checkUserFormatting(r))
-  global.log.info('User record format verification successful.')
+  userLog.succeed('User record verification successful.')
 } catch (e) {
-  global.log.error('User record loading failed: Malformed file "users.json". A more specific error reason will be given below.')
+  userLog.fail('User record verification failed: Malformed file "users.json". A more specific error reason will be given below. The program will now terminate.')
   global.log.error(e.message)
-  global.log.error('Exiting...')
   process.exit()
 }
 
