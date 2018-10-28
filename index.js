@@ -8,7 +8,7 @@ console.log(
   || || |\\__ \\|___||   /| (__| (_) || .\` | |
   | \\__/ |___/     |_|_\\ \\___|\\___/ |_|\\_| |
   |________________________________________|
-  `)
+`)
 
 // Load native extensions and global variables
 require('./internals/globalVariables')
@@ -27,7 +27,7 @@ const helmet = require('helmet')
 const RateLimit = require('express-rate-limit')
 const ora = require('ora')
 
-const router = require('./routes/router')
+const router = require('./internals/router')
 const { init } = require('./internals/ws')
 const { pingServer } = require('./internals/session')
 
