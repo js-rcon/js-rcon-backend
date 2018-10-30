@@ -1,6 +1,6 @@
 const router = require('express').Router()
-const { initSession, getSession, terminateSession } = require('../internals/session')
-const { checkCredentials } = require('../internals/users')
+const { initSession, getSession, terminateSession } = require('./session')
+const { checkCredentials } = require('./users')
 
 router.get('/status', async (req, res) => {
   let session
