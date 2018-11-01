@@ -19,7 +19,9 @@ require('dotenv').config()
 
 const express = require('express')
 const app = express()
-const http = require('http').Server(app)
+const http = require('http')
+const https = require('https')
+const fs = require('fs')
 const bodyParser = require('body-parser')
 const cors = require('cors')
 const path = require('path')
@@ -72,7 +74,28 @@ app.use(express.static(path.join(__dirname, '/public')))
 
 app.use('/', ratelimitConfig, router)
 
-http.listen(process.env.LISTEN_PORT || 8080, () => {
-  webLog.succeed(`Web interface started on http://localhost:${process.env.LISTEN_PORT || 8080}.`)
+const getSslOptions = () => {
+  if (JSON.parse(process.env.SSL_USE_PFX)) {
+    return {
+      pfx: fs.readFileSync(process.env.SSL_PFX_FILE),
+      passphrase: process.env.SSL_PFX_PASSPHRASE
+    }
+  } else {
+    return {
+      key: fs.readFileSync(process.env.SSL_KEY),
+      cert: fs.readFileSync(process.env.SSL_CERT)
+    }
+  }
+}
+
+const listenCb = () => {
+  webLog.succeed(`Web interface started on http${process.env.ENABLE_HTTPS ? 's' : ''}://localhost:${process.env.LISTEN_PORT || 8080}.`)
   init(http)
-})
+}
+
+const port = process.env.LISTEN_PORT || 8080
+
+// TODO: Enforce HTTPS-only connections when SSL is enabled
+
+if (JSON.parse(process.env.ENABLE_HTTPS)) https.createServer(getSslOptions(), app).listen(port, listenCb)
+else http.createServer(app).listen(port, listenCb)

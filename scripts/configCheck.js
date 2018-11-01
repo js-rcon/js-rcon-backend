@@ -2,6 +2,7 @@ const fs = require('fs-extra')
 const path = require('path')
 const download = require('download-file')
 const ora = require('ora')
+const sslCheck = require('./sslCheck')
 
 const checkSpinner = ora('Checking for config file .env...').start()
 
@@ -50,7 +51,8 @@ function ensureEnvVars () {
     process.exit(1)
   } else {
     ensureSpinner.succeed('All mandatory environment variables set. Good to go!')
-    process.exit(0)
+    if (JSON.parse(process.env.ENABLE_HTTPS)) sslCheck()
+    process.exit(0) // In case the SSL check isn't run, otherwise that function will cause process exit
   }
 }
 
