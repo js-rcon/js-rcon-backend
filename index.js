@@ -14,19 +14,15 @@ console.log(
 require('./internals/globalVariables')
 require('./internals/nativeExtensions')
 
-// Load environment variables
-require('dotenv').config()
-
 const express = require('express')
 const app = express()
-const http = require('http')
-const https = require('https')
-const fs = require('fs')
+const httpServer = global.httpsEnabled ? require('https').Server(global.sslOptions, app) : require('http').Server(app)
 const bodyParser = require('body-parser')
 const cors = require('cors')
 const path = require('path')
 const helmet = require('helmet')
 const RateLimit = require('express-rate-limit')
+const enforceHttps = require('express-enforce-https')
 const ora = require('ora')
 
 const router = require('./internals/router')
@@ -40,19 +36,41 @@ pingServer()
 const devCors = cors()
 
 // In production only localhost and the equivalent IP are allowed
-const prodCors = cors({ origin: [ `http://localhost:${process.env.LISTEN_PORT || 8080}`, `http://127.0.0.1:${process.env.LISTEN_PORT || 8080}` ] })
+const prodCors = cors({
+  origin: [
+    `http${global.httpsEnabled ? 's' : ''}://localhost:${global.port}`,
+    `http${global.httpsEnabled ? 's' : ''}://127.0.0.1:${global.port}`
+  ]
+})
 
 // Initialise rate limit config
 const ratelimitConfig = new RateLimit({
   windowMs: process.env.RATELIMIT_WINDOW || 5000,
   max: process.env.BLOCK_THRESHOLD || 15,
-  message: 'Too many requests, please try again later.',
+  statusCode: 429,
+  message: { error: 'Too many requests, please try again later.' },
   headers: true
 })
 
+// Initialise HTTPS enforcement
+
+const httpsLog = ora('Initialising SSL options...').start()
+
+if (global.httpsEnabled) {
+  const options = {
+    statusCode: 403,
+    message: { error: 'Insecure connection detected. Switch to HTTPS.' }
+  }
+
+  app.use(enforceHttps(options))
+  httpsLog.succeed('HTTPS enabled. Restricting request acceptance to secure only.')
+} else {
+  httpsLog.warn('HTTPS not enabled. Accepting insecure connections for requests.')
+}
+
 const corsLog = ora('Initialising request policy...').start()
 
-// Initialize middleware
+// Initialise middleware
 if (global.devMode) {
   app.use(devCors)
   corsLog.warn('Running in debug mode. Unrestricted request policy enabled.')
@@ -74,28 +92,7 @@ app.use(express.static(path.join(__dirname, '/public')))
 
 app.use('/', ratelimitConfig, router)
 
-const getSslOptions = () => {
-  if (JSON.parse(process.env.SSL_USE_PFX)) {
-    return {
-      pfx: fs.readFileSync(process.env.SSL_PFX_FILE),
-      passphrase: process.env.SSL_PFX_PASSPHRASE
-    }
-  } else {
-    return {
-      key: fs.readFileSync(process.env.SSL_KEY),
-      cert: fs.readFileSync(process.env.SSL_CERT)
-    }
-  }
-}
-
-const listenCb = () => {
-  webLog.succeed(`Web interface started on http${process.env.ENABLE_HTTPS ? 's' : ''}://localhost:${process.env.LISTEN_PORT || 8080}.`)
-  init(http)
-}
-
-const port = process.env.LISTEN_PORT || 8080
-
-// TODO: Enforce HTTPS-only connections when SSL is enabled
-
-if (JSON.parse(process.env.ENABLE_HTTPS)) https.createServer(getSslOptions(), app).listen(port, listenCb)
-else http.createServer(app).listen(port, listenCb)
+httpServer.listen(global.port, () => {
+  webLog.succeed(`Web interface started on http${global.httpsEnabled ? 's' : ''}://localhost:${global.port}.`)
+  init(httpServer)
+})

@@ -39,7 +39,7 @@ router.post('/auth', async (req, res) => {
     res.status(400).send({
       username: null,
       token: null,
-      error: 'Missing request body parameter \'username\' or \'password\''
+      error: 'Missing request body parameter "username" and/or "password"'
     })
   }
 
